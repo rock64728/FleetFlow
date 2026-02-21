@@ -1,65 +1,130 @@
-import Image from "next/image";
+import { PrismaClient } from '@prisma/client'
+import Link from 'next/link'
+import CompleteTripForm from './CompleteTripForm'
 
-export default function Home() {
+const prisma = new PrismaClient()
+const pendingTrips = await prisma.trip.count({ where: { status: 'Draft' } })
+// Fetch trips currently in progress
+const activeTrips = await prisma.trip.findMany({
+  where: { status: 'Dispatched' },
+  include: { vehicle: true, driver: true } // Include relations to show names/plates
+})
+
+export default async function CommandCenter() {
+  // 1. Fetch all vehicles and trips from the local database
+  const vehicles = await prisma.vehicle.findMany()
+  const pendingTrips = await prisma.trip.count({ where: { status: 'Draft' } })
+
+  // 2. Calculate the exact KPIs Odoo requested
+  const totalVehicles = vehicles.length
+  const activeFleet = vehicles.filter(v => v.status === 'On Trip').length
+  const maintenanceAlerts = vehicles.filter(v => v.status === 'In Shop').length
+  
+  // Utilization Rate: % of fleet assigned
+  const utilizationRate = totalVehicles > 0 
+    ? Math.round((activeFleet / totalVehicles) * 100) 
+    : 0
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="p-8 bg-slate-50 min-h-screen text-slate-900">
+      <div className="max-w-6xl mx-auto">
+        <header className="mb-8 border-b pb-4">
+          <h1 className="text-3xl font-bold tracking-tight">FleetFlow Command Center</h1>
+          <p className="text-slate-500 mt-2">High-level fleet oversight and live metrics.</p>
+        </header>
+
+        {/* KPI Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <KPICard title="Active Fleet" value={activeFleet.toString()} subtitle="Vehicles On Trip" color="text-blue-600" />
+          <KPICard title="Maintenance Alerts" value={maintenanceAlerts.toString()} subtitle="Vehicles In Shop" color="text-red-600" />
+          <KPICard title="Utilization Rate" value={`${utilizationRate}%`} subtitle="Assigned vs. Idle" color="text-green-600" />
+          <KPICard title="Pending Cargo" value={pendingTrips.toString()} subtitle="Shipments Waiting" color="text-amber-600" />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        {/* Active Trips Section (NEW) */}
+        <section className="bg-white p-6 rounded-xl border shadow-sm mb-8">
+          <div className="flex justify-between items-center mb-4 border-b pb-2">
+            <h2 className="text-xl font-semibold">Active Dispatched Trips</h2>
+            <Link href="/dispatch" className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors">
+              + New Dispatch
+            </Link>
+          </div>
+          
+          {activeTrips.length === 0 ? (
+            <p className="text-slate-500 text-sm py-4">No trips currently dispatched. All vehicles are idle or in shop.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-100 text-sm uppercase text-slate-600">
+                    <th className="p-3 border-b">Vehicle</th>
+                    <th className="p-3 border-b">Driver</th>
+                    <th className="p-3 border-b">Cargo Load</th>
+                    <th className="p-3 border-b">Action (End Trip)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeTrips.map((trip) => (
+                    <tr key={trip.id} className="border-b last:border-0 hover:bg-slate-50 transition-colors">
+                      <td className="p-3 font-medium">{trip.vehicle.licensePlate}</td>
+                      <td className="p-3 text-slate-600">{trip.driver.name}</td>
+                      <td className="p-3">{trip.cargoWeight} kg</td>
+                      <td className="p-3">
+                        <CompleteTripForm tripId={trip.id} currentOdometer={trip.vehicle.odometer} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* Vehicle Registry Snapshot */}
+        <section className="bg-white p-6 rounded-xl border shadow-sm">
+          <h2 className="text-xl font-semibold mb-4 border-b pb-2">Vehicle Registry (Snapshot)</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-100 text-sm uppercase text-slate-600">
+                  <th className="p-3 border-b">License Plate</th>
+                  <th className="p-3 border-b">Model</th>
+                  <th className="p-3 border-b">Max Load</th>
+                  <th className="p-3 border-b">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vehicles.map((vehicle) => (
+                  <tr key={vehicle.id} className="border-b last:border-0 hover:bg-slate-50 transition-colors">
+                    <td className="p-3 font-medium">{vehicle.licensePlate}</td>
+                    <td className="p-3 text-slate-600">{vehicle.model}</td>
+                    <td className="p-3">{vehicle.maxCapacity} kg</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold
+                        ${vehicle.status === 'Available' ? 'bg-green-100 text-green-800' : 
+                          vehicle.status === 'On Trip' ? 'bg-blue-100 text-blue-800' : 
+                          'bg-red-100 text-red-800'}`}>
+                        {vehicle.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  )
+}
+
+// Simple reusable UI component for the metric cards
+function KPICard({ title, value, subtitle, color }: { title: string, value: string, subtitle: string, color: string }) {
+  return (
+    <div className="bg-white p-6 rounded-xl border shadow-sm flex flex-col">
+      <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider">{title}</h3>
+      <div className={`text-4xl font-bold mt-2 mb-1 ${color}`}>{value}</div>
+      <p className="text-xs text-slate-400">{subtitle}</p>
     </div>
-  );
+  )
 }

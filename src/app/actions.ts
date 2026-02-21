@@ -80,3 +80,54 @@ export async function dispatchTrip(formData: FormData) {
     return { error: 'Database transaction failed.' }
   }
 }
+
+// Add this below your existing dispatchTrip function in src/app/actions.ts
+
+export async function completeTrip(formData: FormData) {
+    const tripId = formData.get('tripId') as string
+    const finalOdometer = parseFloat(formData.get('finalOdometer') as string)
+  
+    if (!tripId || isNaN(finalOdometer)) {
+      return { error: 'Missing trip ID or valid odometer reading.' }
+    }
+  
+    // 1. Fetch the trip to get the current vehicle's odometer
+    const trip = await prisma.trip.findUnique({
+      where: { id: tripId },
+      include: { vehicle: true } // Include vehicle data to check current odometer
+    })
+  
+    if (!trip) return { error: 'Trip not found.' }
+  
+    // 2. VALIDATION: Final odometer must be greater than current
+    if (finalOdometer <= trip.vehicle.odometer) {
+      return { error: `Final odometer must be higher than current (${trip.vehicle.odometer} km).` }
+    }
+  
+    // 3. ENTERPRISE TRANSACTION: Close the loop safely
+    try {
+      await prisma.$transaction([
+        // A. Mark trip as Completed
+        prisma.trip.update({
+          where: { id: tripId },
+          data: { status: 'Completed' }
+        }),
+        // B. Free up the Vehicle and update its Odometer
+        prisma.vehicle.update({
+          where: { id: trip.vehicleId },
+          data: { status: 'Available', odometer: finalOdometer }
+        }),
+        // C. Free up the Driver
+        prisma.driver.update({
+          where: { id: trip.driverId },
+          data: { status: 'Off Duty' }
+        })
+      ])
+  
+      revalidatePath('/')
+      return { success: 'Trip completed successfully!' }
+    } catch (error) {
+      console.error(error)
+      return { error: 'Failed to complete trip.' }
+    }
+  }
