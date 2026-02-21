@@ -28,9 +28,14 @@ export default async function CommandCenter() {
   return (
     <main className="p-8 bg-slate-50 min-h-screen text-slate-900">
       <div className="max-w-6xl mx-auto">
-        <header className="mb-8 border-b pb-4">
-          <h1 className="text-3xl font-bold tracking-tight">FleetFlow Command Center</h1>
-          <p className="text-slate-500 mt-2">High-level fleet oversight and live metrics.</p>
+      <header className="mb-8 border-b pb-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">FleetFlow Command Center</h1>
+            <p className="text-slate-500 mt-2">High-level fleet oversight and live metrics.</p>
+          </div>
+          <Link href="/analytics" className="bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors shadow-sm">
+            📊 View Financial Reports
+          </Link>
         </header>
 
         {/* KPI Grid */}
@@ -43,7 +48,7 @@ export default async function CommandCenter() {
 
         {/* Active Trips Section (NEW) */}
         <section className="bg-white p-6 rounded-xl border shadow-sm mb-8">
-          <div className="flex justify-between items-center mb-4 border-b pb-2">
+          <div className="flex flex-row justify-between items-center w-full mb-4 border-b pb-2">
             <h2 className="text-xl font-semibold">Active Dispatched Trips</h2>
             <Link href="/dispatch" className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors">
               + New Dispatch
@@ -82,7 +87,12 @@ export default async function CommandCenter() {
 
         {/* Vehicle Registry Snapshot */}
         <section className="bg-white p-6 rounded-xl border shadow-sm">
-          <h2 className="text-xl font-semibold mb-4 border-b pb-2">Vehicle Registry (Snapshot)</h2>
+        <div className="flex justify-between items-center mb-4 border-b pb-2">
+            <h2 className="text-xl font-semibold">Vehicle Registry (Snapshot)</h2>
+            <Link href="/maintenance" className="bg-red-100 text-red-700 hover:bg-red-200 text-sm font-medium py-1.5 px-3 rounded-md transition-colors">
+              🔧 Log Maintenance
+            </Link>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>

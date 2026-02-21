@@ -131,3 +131,39 @@ export async function completeTrip(formData: FormData) {
       return { error: 'Failed to complete trip.' }
     }
   }
+
+  // Add this at the bottom of src/app/actions.ts
+
+export async function logMaintenance(formData: FormData) {
+    const vehicleId = formData.get('vehicleId') as string
+    const cost = parseFloat(formData.get('cost') as string)
+  
+    if (!vehicleId || isNaN(cost)) {
+      return { error: 'Vehicle selection and valid cost are required.' }
+    }
+  
+    try {
+      await prisma.$transaction([
+        // A. Create the Service Log
+        prisma.log.create({
+          data: {
+            vehicleId,
+            type: 'Service',
+            cost: cost,
+          }
+        }),
+        // B. Auto-Logic: Force vehicle status to "In Shop"
+        prisma.vehicle.update({
+          where: { id: vehicleId },
+          data: { status: 'In Shop' }
+        })
+      ])
+  
+      revalidatePath('/')
+      revalidatePath('/maintenance')
+      return { success: 'Maintenance logged! Vehicle is now In Shop.' }
+    } catch (error) {
+      console.error(error)
+      return { error: 'Database transaction failed.' }
+    }
+  }
