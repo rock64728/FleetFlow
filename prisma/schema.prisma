@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL") // Defaults to "file:./dev.db"
+}
+
+model User {
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  role     String // "Manager", "Dispatcher", "Safety", "Finance"
+  password String // We will mock auth to save time
+}
+
+model Vehicle {
+  id              String  @id @default(uuid())
+  model           String
+  licensePlate    String  @unique
+  maxCapacity     Float   // in kg
+  odometer        Float
+  status          String  @default("Available") // "Available", "On Trip", "In Shop", "Retired"
+  acquisitionCost Float
+  trips           Trip[]
+  logs            Log[]
+}
+
+model Driver {
+  id            String   @id @default(uuid())
+  name          String
+  licenseExpiry DateTime
+  safetyScore   Float    @default(100)
+  status        String   @default("Off Duty") // "On Duty", "Off Duty", "Suspended"
+  trips         Trip[]
+}
+
+model Trip {
+  id            String   @id @default(uuid())
+  vehicleId     String
+  driverId      String
+  cargoWeight   Float
+  status        String   @default("Draft") // "Draft", "Dispatched", "Completed", "Cancelled"
+  createdAt     DateTime @default(now())
+
+  vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
+  driver        Driver   @relation(fields: [driverId], references: [id])
+}
+
+model Log {
+  id            String   @id @default(uuid())
+  vehicleId     String
+  type          String   // "Fuel", "Service"
+  cost          Float
+  liters        Float?   // Optional: Only used if type is "Fuel"
+  date          DateTime @default(now())
+
+  vehicle       Vehicle  @relation(fields: [vehicleId], references: [id])
+}
