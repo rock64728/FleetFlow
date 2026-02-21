@@ -9,7 +9,7 @@ async function main() {
   await prisma.vehicle.deleteMany()
   await prisma.driver.deleteMany()
   await prisma.user.deleteMany()
-  // 1. Create Mock Users (RBAC)
+  //Mock Users 
   await prisma.user.create({
     data: { name: 'Fleet Manager', email: 'manager@fleet.com', role: 'Manager', password: 'password123' }
   })
@@ -17,7 +17,7 @@ async function main() {
     data: { name: 'Dispatcher Pro', email: 'dispatch@fleet.com', role: 'Dispatcher', password: 'password123' }
   })
 
-  // 2. Create Vehicles (Varying statuses and capacities)
+  //Vehicles 
   await prisma.vehicle.createMany({
     data: [
       { model: 'Light Van', licensePlate: 'GJ-01-AB-1234', maxCapacity: 500, odometer: 15000, status: 'Available', acquisitionCost: 25000 },
@@ -26,7 +26,7 @@ async function main() {
     ]
   })
 
-  // 3. Create Drivers (Testing compliance: Alex is valid, Ravi has an expired license)
+  // Drivers
   await prisma.driver.createMany({
     data: [
       { name: 'Alex (Valid)', licenseExpiry: new Date('2028-12-31'), safetyScore: 98, status: 'Off Duty' },

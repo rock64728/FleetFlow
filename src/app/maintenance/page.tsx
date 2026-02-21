@@ -5,14 +5,14 @@ import Link from 'next/link'
 const prisma = new PrismaClient()
 
 export default async function MaintenancePage() {
-  // Fetch vehicles that are NOT currently In Shop or Retired
+  
   const eligibleVehicles = await prisma.vehicle.findMany({ 
     where: { 
       NOT: { status: 'In Shop' } 
     } 
   })
 
-  // Fetch recent service logs to show a history
+  
   const recentLogs = await prisma.log.findMany({
     where: { type: 'Service' },
     include: { vehicle: true },

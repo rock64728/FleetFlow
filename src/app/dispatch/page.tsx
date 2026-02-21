@@ -5,13 +5,12 @@ import Link from 'next/link'
 const prisma = new PrismaClient()
 
 export default async function DispatchPage() {
-  // Fetch ONLY available vehicles and drivers for the dropdowns
+  // Fetch available vehicles 
   const availableVehicles = await prisma.vehicle.findMany({ 
     where: { status: 'Available' } 
   })
   
-  // We fetch all "Off Duty" drivers. We will let the backend logic 
-  // catch the expired licenses to show off our validation!
+  
   const availableDrivers = await prisma.driver.findMany({ 
     where: { status: 'Off Duty' } 
   })

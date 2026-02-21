@@ -13,14 +13,14 @@ export default function DispatchForm({ vehicles, drivers }: { vehicles: any[], d
     setIsLoading(true)
     setMessage(null)
     
-    // Call our strict backend logic!
+    //call backend logic
     const result = await dispatchTrip(formData)
     
     if (result.error) {
       setMessage({ type: 'error', text: result.error })
     } else if (result.success) {
       setMessage({ type: 'success', text: result.success })
-      // Wait 2 seconds, then redirect back to the dashboard to see the updated stats
+      
       setTimeout(() => {
         router.push('/')
       }, 2000)

@@ -4,23 +4,23 @@ import CompleteTripForm from './CompleteTripForm'
 
 const prisma = new PrismaClient()
 const pendingTrips = await prisma.trip.count({ where: { status: 'Draft' } })
-// Fetch trips currently in progress
+
 const activeTrips = await prisma.trip.findMany({
   where: { status: 'Dispatched' },
-  include: { vehicle: true, driver: true } // Include relations to show names/plates
+  include: { vehicle: true, driver: true } 
 })
 
 export default async function CommandCenter() {
-  // 1. Fetch all vehicles and trips from the local database
+  
   const vehicles = await prisma.vehicle.findMany()
   const pendingTrips = await prisma.trip.count({ where: { status: 'Draft' } })
 
-  // 2. Calculate the exact KPIs Odoo requested
+  
   const totalVehicles = vehicles.length
   const activeFleet = vehicles.filter(v => v.status === 'On Trip').length
   const maintenanceAlerts = vehicles.filter(v => v.status === 'In Shop').length
   
-  // Utilization Rate: % of fleet assigned
+ 
   const utilizationRate = totalVehicles > 0 
     ? Math.round((activeFleet / totalVehicles) * 100) 
     : 0
@@ -28,12 +28,12 @@ export default async function CommandCenter() {
   return (
     <main className="p-8 bg-slate-50 min-h-screen text-slate-900">
       <div className="max-w-6xl mx-auto">
-      <header className="mb-8 border-b pb-4 flex justify-between items-center">
+      <header className="mb-8 border-b pb-4 flex flex-col sm:flex-row justify-between sm:items-end gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">FleetFlow Command Center</h1>
             <p className="text-slate-500 mt-2">High-level fleet oversight and live metrics.</p>
           </div>
-          <Link href="/analytics" className="bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors shadow-sm">
+          <Link href="/analytics" className="bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium py-2.5 px-6 rounded-md shadow-md transition-all flex-shrink-0">
             📊 View Financial Reports
           </Link>
         </header>
@@ -48,9 +48,9 @@ export default async function CommandCenter() {
 
         {/* Active Trips Section (NEW) */}
         <section className="bg-white p-6 rounded-xl border shadow-sm mb-8">
-          <div className="flex flex-row justify-between items-center w-full mb-4 border-b pb-2">
+        <div className="flex justify-between items-center mb-4 border-b pb-2 w-full">
             <h2 className="text-xl font-semibold">Active Dispatched Trips</h2>
-            <Link href="/dispatch" className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors">
+            <Link href="/dispatch" className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md shadow-sm transition-colors flex-shrink-0">
               + New Dispatch
             </Link>
           </div>
@@ -87,9 +87,9 @@ export default async function CommandCenter() {
 
         {/* Vehicle Registry Snapshot */}
         <section className="bg-white p-6 rounded-xl border shadow-sm">
-        <div className="flex justify-between items-center mb-4 border-b pb-2">
+        <div className="flex justify-between items-center mb-4 border-b pb-2 w-full">
             <h2 className="text-xl font-semibold">Vehicle Registry (Snapshot)</h2>
-            <Link href="/maintenance" className="bg-red-100 text-red-700 hover:bg-red-200 text-sm font-medium py-1.5 px-3 rounded-md transition-colors">
+            <Link href="/maintenance" className="bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 text-sm font-medium py-2 px-4 rounded-md shadow-sm transition-colors flex-shrink-0">
               🔧 Log Maintenance
             </Link>
           </div>

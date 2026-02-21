@@ -4,7 +4,7 @@ import Link from 'next/link'
 const prisma = new PrismaClient()
 
 export default async function AnalyticsPage() {
-  // Fetch vehicles and include ALL their completed trips and financial logs
+  
   const vehicles = await prisma.vehicle.findMany({
     include: {
       logs: true,
@@ -14,7 +14,7 @@ export default async function AnalyticsPage() {
     }
   })
 
-  // Calculate enterprise financial metrics dynamically
+  
   const financialData = vehicles.map(vehicle => {
     // 1. Calculate Costs
     const maintenanceCost = vehicle.logs
@@ -27,12 +27,11 @@ export default async function AnalyticsPage() {
 
     const totalOperationalCost = maintenanceCost + fuelCost
 
-    // 2. Calculate Revenue (Simulated as $5 per kg of cargo delivered on completed trips)
+    
     const totalCargoDelivered = vehicle.trips.reduce((sum, trip) => sum + trip.cargoWeight, 0)
     const revenue = totalCargoDelivered * 5
 
-    // 3. Odoo's Requested Vehicle ROI Formula
-    // ROI = (Revenue - (Maintenance + Fuel)) / Acquisition Cost
+    
     const roiDecimal = vehicle.acquisitionCost > 0 
       ? (revenue - totalOperationalCost) / vehicle.acquisitionCost 
       : 0
@@ -49,7 +48,7 @@ export default async function AnalyticsPage() {
     }
   })
 
-  // Aggregate Fleet Totals
+  
   const fleetRevenue = financialData.reduce((sum, v) => sum + v.revenue, 0)
   const fleetCosts = financialData.reduce((sum, v) => sum + v.totalOperationalCost, 0)
   const netProfit = fleetRevenue - fleetCosts
